@@ -38,7 +38,7 @@ def index():
         except ValueError as e:
             print(f"Date parsing error: {e}")
             return render_template("index.html", prediction="Error: Invalid date format", 
-                                 anomaly=None, hist_data=None)
+                                 anomaly=None)
 
         try:
             vendor_id_enc = le_vendor.transform([vendor_id])[0]
@@ -48,7 +48,7 @@ def index():
         except ValueError as e:
             print(f"Encoding error: {e}")
             return render_template("index.html", prediction="Error: Invalid category/location/vendor", 
-                                 anomaly=None, hist_data=None)
+                                 anomaly=None)
 
         input_data = np.array([[vendor_id_enc, payment_amount, category_enc, location_enc, 
                                hist_payment_behavior, payment_terms, 
@@ -59,13 +59,9 @@ def index():
         is_anomaly = iso_forest.predict(input_data)[0] == -1
         print(f"Predicted Delay: {predicted_delay}, Anomaly: {is_anomaly}")
 
-        hist_data = [max(0, hist_payment_behavior + np.random.normal(0, 2)) for _ in range(4)]
-
         return render_template("index.html", 
                               prediction=f"Predicted Delay: {predicted_delay:.2f} days",
                               anomaly="Yes" if is_anomaly else "No",
-                              hist_data=hist_data,
-                              pred_delay=predicted_delay,
                               vendor_id=vendor_id,
                               payment_amount=payment_amount,
                               vendor_category=vendor_category,
@@ -75,7 +71,7 @@ def index():
                               due_date=due_date,
                               due_dt=due_dt,
                               invoice_dt=invoice_dt)
-    return render_template("index.html", prediction=None, anomaly=None, hist_data=None)
+    return render_template("index.html", prediction=None, anomaly=None)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
