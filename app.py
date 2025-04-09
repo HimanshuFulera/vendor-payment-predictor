@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import pickle
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime
 
 app = Flask(__name__)
@@ -18,7 +19,6 @@ iso_forest = pickle.load(open("iso_forest.pkl", "rb"))
 def index():
     if request.method == "POST":
         print("POST request received")
-        # Get form data
         vendor_id = request.form["vendor_id"]
         payment_amount = float(request.form["payment_amount"])
         vendor_category = request.form["vendor_category"]
@@ -30,7 +30,6 @@ def index():
         print(f"Input: {vendor_id}, {payment_amount}, {vendor_category}, {vendor_location}, "
               f"{hist_payment_behavior}, {invoice_date}, {due_date}")
 
-        # Calculate Payment Terms
         try:
             invoice_dt = datetime.strptime(invoice_date, "%Y-%m-%d")
             due_dt = datetime.strptime(due_date, "%Y-%m-%d")
@@ -41,7 +40,6 @@ def index():
             return render_template("index.html", prediction="Error: Invalid date format", 
                                  anomaly=None, hist_data=None)
 
-        # Encode categorical variables
         try:
             vendor_id_enc = le_vendor.transform([vendor_id])[0]
             category_enc = le_category.transform([vendor_category])[0]
@@ -52,21 +50,17 @@ def index():
             return render_template("index.html", prediction="Error: Invalid category/location/vendor", 
                                  anomaly=None, hist_data=None)
 
-        # Prepare input data
         input_data = np.array([[vendor_id_enc, payment_amount, category_enc, location_enc, 
-                                hist_payment_behavior, payment_terms, 
-                                payment_terms * payment_amount, payment_amount * category_enc]])
+                               hist_payment_behavior, payment_terms, 
+                               payment_terms * payment_amount, payment_amount * category_enc]])
         input_scaled = scaler.transform(input_data)
 
-        # Predict delay
         predicted_delay = rf_model.predict(input_scaled)[0]
         is_anomaly = iso_forest.predict(input_data)[0] == -1
         print(f"Predicted Delay: {predicted_delay}, Anomaly: {is_anomaly}")
 
-        # Generate historical data based on input
-        hist_data = [max(0, hist_payment_behavior + np.random.normal(0, 2)) for _ in range(4)]  # Simulate past delays
+        hist_data = [max(0, hist_payment_behavior + np.random.normal(0, 2)) for _ in range(4)]
 
-        # Pass form data back to template
         return render_template("index.html", 
                               prediction=f"Predicted Delay: {predicted_delay:.2f} days",
                               anomaly="Yes" if is_anomaly else "No",
@@ -78,8 +72,11 @@ def index():
                               vendor_location=vendor_location,
                               hist_payment_behavior=hist_payment_behavior,
                               invoice_date=invoice_date,
-                              due_date=due_date)
+                              due_date=due_date,
+                              due_dt=due_dt,
+                              invoice_dt=invoice_dt)
     return render_template("index.html", prediction=None, anomaly=None, hist_data=None)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
