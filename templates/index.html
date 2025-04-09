@@ -3,7 +3,6 @@
 <head>
     <title>Vendor Payment Predictor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <header>
@@ -54,36 +53,6 @@
         <div class="result-section">
             <h2>{{ prediction }}</h2>
             <p><strong>Anomaly:</strong> {{ anomaly }}</p>
-            <div id="chart"></div>
-            <script>
-                var hist_data = {{ hist_data|tojson }};
-                var pred_delay = {{ pred_delay }};
-                var x_values = [-3, -2, -1, 0, 1];
-                var trace1 = {
-                    x: x_values.slice(0, 4),
-                    y: hist_data,
-                    type: 'bar',
-                    name: 'Historical Delays',
-                    marker: { color: '#3498db' }
-                };
-                var trace2 = {
-                    x: [x_values[4]],
-                    y: [pred_delay],
-                    type: 'bar',
-                    name: 'Predicted Delay',
-                    marker: { color: '#e74c3c' }
-                };
-                var data = [trace1, trace2];
-                var layout = {
-                    xaxis: { title: 'Delay (days)', zeroline: false },
-                    yaxis: { title: 'Delay Value', zeroline: false },
-                    barmode: 'group',
-                    plot_bgcolor: 'white',
-                    paper_bgcolor: 'white',
-                    margin: { t: 30, l: 50, r: 50, b: 50 }
-                };
-                Plotly.newPlot('chart', data, layout);
-            </script>
         </div>
 
         <div class="summary">
