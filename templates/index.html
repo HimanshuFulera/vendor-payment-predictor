@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vendor Payment Analytics</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Vendor Payment Analytics</h1>
+    <h2>Predict Payment Delay</h2>
+    <form method="POST">
+        Vendor ID: <input type="text" name="vendor_id" value="{{ vendor_id if vendor_id else 'V007' }}" required><br>
+        Payment Amount: <input type="number" name="payment_amount" value="{{ payment_amount if payment_amount is not none else 50000 }}" required><br>
+        Vendor Category: <select name="vendor_category">
+            <option value="Logistics" {% if vendor_category == "Logistics" %}selected{% endif %}>Logistics</option>
+            <option value="Raw Materials" {% if vendor_category == "Raw Materials" %}selected{% endif %}>Raw Materials</option>
+            <option value="Services" {% if vendor_category == "Services" %}selected{% endif %}>Services</option>
+            <option value="Technology" {% if vendor_category == "Technology" %}selected{% endif %}>Technology</option>
+        </select><br>
+        Vendor Location: <select name="vendor_location">
+            <option value="US" {% if vendor_location == "US" %}selected{% endif %}>US</option>
+            <option value="EU" {% if vendor_location == "EU" %}selected{% endif %}>EU</option>
+            <option value="Asia" {% if vendor_location == "Asia" %}selected{% endif %}>Asia</option>
+            <option value="Africa" {% if vendor_location == "Africa" %}selected{% endif %}>Africa</option>
+        </select><br>
+        Historical Payment Behavior (avg delay): <input type="number" step="0.1" name="hist_payment_behavior" 
+            value="{{ hist_payment_behavior if hist_payment_behavior is not none else 12 }}" required><br>
+        Invoice Date: <input type="date" name="invoice_date" value="{{ invoice_date if invoice_date else '2025-04-30' }}" required><br>
+        Due Date: <input type="date" name="due_date" value="{{ due_date if due_date else '2025-05-09' }}" required><br>
+        <input type="submit" value="Predict">
+    </form>
+
+    {% if prediction %}
+        <h2>{{ prediction }}</h2>
+        <p>Anomaly: {{ anomaly }}</p>
+        <div id="chart"></div>
+        <script>
+            var hist_data = {{ hist_data|tojson }};
+            var pred_delay = {{ pred_delay }};
+            var x_values = [-3, -2, -1, 0, 1];  // Adjusted x-axis
+            var trace1 = {
+                x: x_values.slice(0, 4),
+                y: hist_data,
+                type: 'bar',
+                name: 'Historical Delays'
+            };
+            var trace2 = {
+                x: [x_values[4]],  // Place predicted at x=1
+                y: [pred_delay],
+                type: 'bar',
+                name: 'Predicted Delay'
+            };
+            var data = [trace1, trace2];
+            var layout = {
+                xaxis: { title: 'Delay (days)' },
+                yaxis: { title: 'Delay Value' },
+                barmode: 'group'
+            };
+            Plotly.newPlot('chart', data, layout);
+        </script>
+    {% endif %}
+</body>
+</html>
